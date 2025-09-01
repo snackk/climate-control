@@ -1,5 +1,7 @@
 # Bosch Climate 3000i Controller
 
+<img width="873" height="310" alt="Screenshot 2025-09-01 at 21 24 55" src="https://github.com/user-attachments/assets/f44777e7-a79b-47b7-b347-da5eaeea888d" />
+
 This project enables control of a **Bosch Climate 3000i** air conditioning unit using ESPHome and the **Midea UART interface protocol**. The controller uses an ESP12S module to communicate directly with the AC unit over UART, providing local control without cloud dependencies.
 
 ## Hardware Requirements
