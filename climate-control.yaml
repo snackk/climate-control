@@ -1,0 +1,66 @@
+esphome:
+  name: bosch-climate-controller
+  friendly_name: Bosch Climate Controller
+
+# ESP12s
+esp8266:
+  board: esp01_1m
+  restore_from_flash: true  # auto recovery
+
+# Disable logging
+logger:
+  baud_rate: 0
+
+# UART for Midea AC communication
+uart:
+  tx_pin: GPIO1
+  rx_pin: GPIO3
+  baud_rate: 9600
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "UpKbOVJttMu4+XIKn3O2eHW7UHyabG1krOab1iStlRk="
+
+# Enable OTA updates
+ota:
+  - platform: esphome
+    password: "password123456"
+
+# WiFi configuration
+wifi:
+  ssid: "snackkster"
+  password: "maybegofuckyourself026"
+  power_save_mode: none
+  fast_connect: true
+  reboot_timeout: 15min
+
+# AP configuration
+  ap:
+    ssid: "Bosch-Fallback"
+    password: "password123456"
+
+# Captive portal for fallback
+captive_portal:
+
+# Web server for debugging
+web_server:
+  port: 80
+
+# Midea Interface (should work with Bosch Climate 3000i)
+climate:
+  - platform: midea
+    name: "Bosch Climate Controller"
+    period: 1s
+    timeout: 2s
+    num_attempts: 3
+    autoconf: true
+    beeper: true
+    visual:
+      min_temperature: 17 °C
+      max_temperature: 30 °C
+      temperature_step: 0.5 °C
+    outdoor_temperature:
+      name: "Outdoor Temperature"
+    power_usage:
+      name: "AC Power Usage"
