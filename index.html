@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="pt-PT" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>ClimaControl AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <style>
+        :root {
+            --md-sys-color-primary: #d0bcff;
+            --md-sys-color-on-primary: #381e72;
+            --md-sys-color-surface: #1c1b1f;
+            --md-sys-color-surface-container: #2b2930;
+            --md-sys-color-outline: #938f99;
+            --md-sys-color-secondary-container: #49454f;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--md-sys-color-surface);
+            color: #e6e1e5;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        .safe-area-top { padding-top: env(safe-area-inset-top); }
+        .safe-area-bottom { padding-bottom: calc(env(safe-area-inset-bottom) + 10px); }
+
+        .material-card {
+            background-color: var(--md-sys-color-surface-container);
+            border-radius: 24px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .material-card:active {
+            transform: scale(0.97);
+            background-color: var(--md-sys-color-secondary-container);
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 100px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .temp-dial {
+            position: relative;
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: conic-gradient(from 180deg, #381e72 0%, #d0bcff 50%, #381e72 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .temp-dial-inner {
+            width: 150px;
+            height: 150px;
+            background: var(--md-sys-color-surface);
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .view-content {
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .mode-btn {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--md-sys-color-surface-container);
+            transition: all 0.2s;
+        }
+
+        .mode-btn.active {
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+        }
+
+        /* Ocultar scrollbar */
+        ::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Header / Status Bar Area -->
+    <header class="safe-area-top sticky top-0 bg-[#1c1b1f]/80 backdrop-blur-md z-40 p-6 flex justify-between items-end h-32">
+        <div>
+            <h1 class="text-sm font-medium text-[#938f99]">Bem-vindo à Casa</h1>
+            <h2 id="view-title" class="text-2xl font-bold">Climatização</h2>
+        </div>
+        <div class="w-10 h-10 rounded-full bg-[#2b2930] flex items-center justify-center border border-[#49454f]">
+            <i class="fas fa-bolt text-[#d0bcff]"></i>
+        </div>
+    </header>
+
+    <!-- App Container -->
+    <main id="main-content" class="flex-1 overflow-y-auto px-6 pb-32 space-y-6">
+        
+        <!-- Quick Stats Overlay -->
+        <div class="flex gap-4 overflow-x-auto pb-2 no-scrollbar">
+            <div class="bg-[#2b2930] p-4 rounded-3xl min-w-[140px] border border-[#49454f]/30">
+                <i class="fas fa-droplet text-blue-400 mb-2"></i>
+                <p class="text-xs text-[#938f99]">Humidade média</p>
+                <p class="text-lg font-bold">42%</p>
+            </div>
+            <div class="bg-[#2b2930] p-4 rounded-3xl min-w-[140px] border border-[#49454f]/30">
+                <i class="fas fa-leaf text-green-400 mb-2"></i>
+                <p class="text-xs text-[#938f99]">Qualidade Ar</p>
+                <p class="text-lg font-bold">Excelente</p>
+            </div>
+        </div>
+
+        <h3 class="text-sm font-medium text-[#d0bcff] uppercase tracking-widest ml-1">Dispositivos</h3>
+
+        <!-- AC Grid -->
+        <div id="ac-grid" class="grid grid-cols-1 gap-4">
+            <!-- Cards gerados via JS para simular estado -->
+        </div>
+
+    </main>
+
+    <!-- Navigation Bar -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-[#2b2930]/90 backdrop-blur-xl border-t border-[#49454f] safe-area-bottom z-50 h-24 flex items-center px-8 shadow-[0_-10px_40px_rgba(0,0,0,0.4)]">
+        <button onclick="switchTab('home')" class="nav-btn flex-1 flex flex-col items-center gap-1 text-[#d0bcff]">
+            <div class="w-16 h-8 rounded-full bg-[#d0bcff]/20 flex items-center justify-center">
+                <i class="fas fa-house-chimney text-lg"></i>
+            </div>
+            <span class="text-[10px] font-medium">Início</span>
+        </button>
+        <button onclick="switchTab('schedules')" class="nav-btn flex-1 flex flex-col items-center gap-1 text-[#938f99]">
+            <i class="fas fa-calendar-alt text-lg"></i>
+            <span class="text-[10px] font-medium">Agendar</span>
+        </button>
+        <button onclick="switchTab('energy')" class="nav-btn flex-1 flex flex-col items-center gap-1 text-[#938f99]">
+            <i class="fas fa-chart-line text-lg"></i>
+            <span class="text-[10px] font-medium">Consumo</span>
+        </button>
+        <button onclick="switchTab('settings')" class="nav-btn flex-1 flex flex-col items-center gap-1 text-[#938f99]">
+            <i class="fas fa-cog text-lg"></i>
+            <span class="text-[10px] font-medium">Definições</span>
+        </button>
+    </nav>
+
+    <!-- Detail Modal (Control Panel) -->
+    <div id="control-modal" class="fixed inset-0 z-[60] bg-black/80 hidden flex flex-col justify-end">
+        <div class="bg-[#1c1b1f] w-full rounded-t-[40px] p-8 view-content max-h-[90vh] overflow-y-auto">
+            <div class="w-12 h-1.5 bg-[#49454f] rounded-full mx-auto mb-8" onclick="closeModal()"></div>
+            
+            <div class="flex justify-between items-start mb-8">
+                <div>
+                    <h3 id="modal-room-name" class="text-3xl font-bold">Sala de estar</h3>
+                    <p class="text-[#938f99]">Samsung WindFree™</p>
+                </div>
+                <button onclick="toggleACPower()" id="power-btn" class="w-14 h-14 rounded-2xl bg-red-500/20 text-red-400 flex items-center justify-center text-xl transition-all">
+                    <i class="fas fa-power-off"></i>
+                </button>
+            </div>
+
+            <!-- Temp Control -->
+            <div class="flex flex-col items-center py-6">
+                <div class="temp-dial">
+                    <div class="temp-dial-inner">
+                        <span class="text-xs text-[#938f99] font-medium">Ajustar para</span>
+                        <div class="flex items-baseline">
+                            <span id="target-temp" class="text-5xl font-bold">22</span>
+                            <span class="text-2xl font-medium text-[#d0bcff]">°C</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex gap-12 mt-8">
+                    <button onclick="adjustTemp(-1)" class="w-12 h-12 rounded-full bg-[#2b2930] flex items-center justify-center active:scale-90 transition-transform">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <button onclick="adjustTemp(1)" class="w-12 h-12 rounded-full bg-[#2b2930] flex items-center justify-center active:scale-90 transition-transform">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modes -->
+            <div class="mt-8">
+                <p class="text-xs font-medium text-[#938f99] uppercase tracking-widest mb-4">Modo de Operação</p>
+                <div class="flex justify-between">
+                    <button onclick="setMode('cool')" class="mode-btn active" id="mode-cool"><i class="fas fa-snowflake"></i></button>
+                    <button onclick="setMode('heat')" class="mode-btn" id="mode-heat"><i class="fas fa-sun"></i></button>
+                    <button onclick="setMode('fan')" class="mode-btn" id="mode-fan"><i class="fas fa-fan"></i></button>
+                    <button onclick="setMode('dry')" class="mode-btn" id="mode-dry"><i class="fas fa-droplet"></i></button>
+                    <button onclick="setMode('auto')" class="mode-btn" id="mode-auto"><i class="fas fa-wand-magic-sparkles"></i></button>
+                </div>
+            </div>
+
+            <!-- Footer Action -->
+            <button onclick="closeModal()" class="w-full bg-[#d0bcff] text-[#381e72] font-bold py-4 rounded-full mt-12 mb-4">
+                Confirmar Ajustes
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const rooms = [
+            { id: 'sala', name: 'Sala de estar', temp: 21, target: 22, status: 'on', mode: 'cool' },
+            { id: 'suite', name: 'Suite', temp: 19, target: 18, status: 'off', mode: 'cool' },
+            { id: 'escritorio', name: 'Escritório', temp: 23, target: 23, status: 'on', mode: 'auto' },
+            { id: 'visitas', name: 'Quarto Visitas', temp: 20, target: 20, status: 'off', mode: 'dry' },
+            { id: 'cozinha', name: 'Cozinha', temp: 24, target: 22, status: 'on', mode: 'cool' }
+        ];
+
+        let activeRoomId = null;
+
+        function renderGrid() {
+            const grid = document.getElementById('ac-grid');
+            grid.innerHTML = rooms.map(room => `
+                <div onclick="openControl('${room.id}')" class="material-card p-5 flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-2xl ${room.status === 'on' ? 'bg-[#d0bcff] text-[#381e72]' : 'bg-[#49454f] text-[#938f99]'} flex items-center justify-center transition-colors">
+                            <i class="fas ${getModeIcon(room.mode)} text-xl"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-base">${room.name}</h4>
+                            <div class="flex items-center gap-2">
+                                <span class="status-badge ${room.status === 'on' ? 'bg-green-500/20 text-green-400' : 'bg-[#49454f] text-[#938f99]'}">
+                                    ${room.status === 'on' ? 'Ligado' : 'Desligado'}
+                                </span>
+                                <span class="text-[10px] text-[#938f99]">• ${room.mode.toUpperCase()}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-2xl font-bold">${room.temp}°</p>
+                        <p class="text-[10px] text-[#938f99]">Meta: ${room.target}°</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getModeIcon(mode) {
+            const icons = { cool: 'fa-snowflake', heat: 'fa-sun', fan: 'fa-fan', dry: 'fa-droplet', auto: 'fa-wand-magic-sparkles' };
+            return icons[mode] || 'fa-wind';
+        }
+
+        function openControl(roomId) {
+            activeRoomId = roomId;
+            const room = rooms.find(r => r.id === roomId);
+            document.getElementById('modal-room-name').textContent = room.name;
+            document.getElementById('target-temp').textContent = room.target;
+            
+            // UI Update
+            updatePowerButtonUI(room.status);
+            updateModeButtonsUI(room.mode);
+            
+            document.getElementById('control-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('control-modal').classList.add('hidden');
+            renderGrid();
+        }
+
+        function adjustTemp(val) {
+            const room = rooms.find(r => r.id === activeRoomId);
+            room.target = Math.max(16, Math.min(30, room.target + val));
+            document.getElementById('target-temp').textContent = room.target;
+            vibrate();
+        }
+
+        function setMode(mode) {
+            const room = rooms.find(r => r.id === activeRoomId);
+            room.mode = mode;
+            updateModeButtonsUI(mode);
+            vibrate();
+        }
+
+        function toggleACPower() {
+            const room = rooms.find(r => r.id === activeRoomId);
+            room.status = room.status === 'on' ? 'off' : 'on';
+            updatePowerButtonUI(room.status);
+            vibrate();
+        }
+
+        function updatePowerButtonUI(status) {
+            const btn = document.getElementById('power-btn');
+            if (status === 'on') {
+                btn.className = 'w-14 h-14 rounded-2xl bg-green-500/20 text-green-400 flex items-center justify-center text-xl transition-all';
+            } else {
+                btn.className = 'w-14 h-14 rounded-2xl bg-red-500/20 text-red-400 flex items-center justify-center text-xl transition-all';
+            }
+        }
+
+        function updateModeButtonsUI(activeMode) {
+            const modes = ['cool', 'heat', 'fan', 'dry', 'auto'];
+            modes.forEach(m => {
+                const btn = document.getElementById(`mode-${m}`);
+                if (m === activeMode) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+
+        function switchTab(tab) {
+            // Visual feedback only for demo
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.replace('text-[#d0bcff]', 'text-[#938f99]'));
+            event.currentTarget.classList.replace('text-[#938f99]', 'text-[#d0bcff]');
+            vibrate();
+        }
+
+        function vibrate() {
+            if (window.navigator && window.navigator.vibrate) {
+                window.navigator.vibrate(10);
+            }
+        }
+
+        // Initialize
+        window.onload = () => {
+            renderGrid();
+        };
+    </script>
+</body>
+</html>
