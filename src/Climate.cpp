@@ -2,8 +2,10 @@
 #include <ESPAsyncWebServer.h>
 #include <ElegantOTA.h>
 #include <Filesys.h>
-#include <Midea.h>
 #include <Wifi.h>
+#include <Appliance/AirConditioner/AirConditioner.h>
+
+using namespace dudanov::midea::ac;
 
 const char* VERSION = "1.0.0";
 
@@ -15,11 +17,10 @@ AsyncWebSocket ws("/ws");
 boolean restart = false;
 
 // MideaAC
-MideaAC mideaAc;
+AirConditioner ac;
 
 void initAsyncWebServer();
-String processor(const String& var);
-void onAcStatus(ac_status_t* status);
+void onAcStateChange();
 void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len);
 void webLog(String message); 
 
@@ -45,11 +46,11 @@ void setup() {
     // Initialize Web Server 
     initAsyncWebServer();
     
-    mideaAc.begin(&Serial);
-    webLog("MideaAC.begin() called");
-    
-    mideaAc.onStatus(onAcStatus);
-    webLog("Status callback registered");
+    // MideaUART
+    ac.setStream(&Serial);
+    ac.addOnStateCallback(onAcStateChange); 
+    ac.setup();
+    webLog("MideaUART initialized");
     
     webLog("AC Controller Ready!");
 }
@@ -57,23 +58,10 @@ void setup() {
 void loop() {
     Wifi.handleWiFiReconnection();
     ElegantOTA.loop();
-    ws.cleanupClients();  // <-- Clean up old WebSocket connections
+    // Clean old WebSocket connections
+    ws.cleanupClients();  
     
-    // Periodic AC status check
-    static unsigned long lastCheck = 0;
-    if (millis() - lastCheck > 10000) {
-        lastCheck = millis();
-        webLog("--- Checking AC communication ---");
-        
-        // Check if data is available
-        if (Serial.available()) {
-            webLog("Data available from AC!");
-        } else {
-            webLog("No data from AC");
-        }
-    }
-    
-    mideaAc.loop();
+    ac.loop();
 
     if (restart) {
         delay(5000);
@@ -97,58 +85,58 @@ void webLog(String message) {
     ws.textAll(message);  // Send to all connected WebSocket clients
 }
 
-String processor(const String& var) {
-    if(var == "AC_STATE") {
-        return "HARDCODED";
-    }
-    if(var == "VERSION") {
-        return VERSION;
-    }
-    return String();
-}
-
 void initAsyncWebServer() {
+    
     // Dynamic root handler
     server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
         if (WiFi.getMode() == WIFI_AP || WiFi.status() != WL_CONNECTED) {
             request->send(LittleFS, "/wifi_setup.html", "text/html");
         } else {
-            request->send(LittleFS, "/index.html", "text/html", false, processor);
+            request->send(LittleFS, "/index.html", "text/html");
         }
     });
 
     // Console page
     server.on("/console", HTTP_GET, [](AsyncWebServerRequest *request) {
-        String html = R"rawliteral()rawliteral";
         request->send(LittleFS, "/console.html", "text/html");
     });
 
-    // Control routes
-    server.on("/on", HTTP_GET, [](AsyncWebServerRequest *request) {
-        webLog("Web command: Power ON");
-        mideaAc.setPower(true);
-        request->send(200, "text/plain", "OK");
-    });
-
-    server.on("/off", HTTP_GET, [](AsyncWebServerRequest *request) {
-        webLog("Web command: Power OFF");
-        mideaAc.setPower(false);
-        request->send(200, "text/plain", "OK");
+    // Firmware version
+    server.on("/api/firmware", HTTP_GET, [](AsyncWebServerRequest *request) {
+        String json = "{";
+        json += "\"version\":\"" + String(VERSION) + "\"";
+        json += "}";
+        request->send(200, "application/json", json);
     });
 
     server.on("/api/status", HTTP_GET, [](AsyncWebServerRequest *request) {
-        ac_status_t* status = mideaAc.getStatus();
+        bool powerState = ac.getPowerState();
+        String json = "{";
+        json += "\"power\":" + String(powerState ? "true" : "false") + ",";
+        json += "\"state\":\"" + String(powerState ? "ON" : "OFF") + "\","; // NOVO
+        json += "\"mode\":" + String((int)ac.getMode()) + ",";
+        json += "\"temp\":" + String(ac.getTargetTemp()) + ",";
+        json += "\"indoor_temp\":" + String(ac.getIndoorTemp()) + ",";
+        json += "\"outdoor_temp\":" + String(ac.getOutdoorTemp()) + ",";
+        json += "\"fan\":" + String((int)ac.getFanMode()) + ",";
+        json += "\"swing\":" + String((int)ac.getSwingMode()) + ",";
+        json += "\"turbo\":" + String(ac.getPreset() == Preset::PRESET_TURBO ? "true" : "false") + ",";
+        json += "\"eco\":" + String(ac.getPreset() == Preset::PRESET_FREEZE_PROTECTION ? "true" : "false");
+        json += "}";
+        
+        request->send(200, "application/json", json);
+    });
+
+    server.on("^\\/api\\/state\\/(ON|OFF)$", HTTP_PUT, [](AsyncWebServerRequest *request) {
+        String state = request->pathArg(0);
+        bool powerOn = (state == "ON");
+        
+        webLog("API command: Power " + state);
+        ac.setPowerState(powerOn);
         
         String json = "{";
-        json += "\"power\":" + String(status->power ? "true" : "false") + ",";
-        json += "\"mode\":" + String(status->mode) + ",";
-        json += "\"temp\":" + String(status->targetTemp) + ",";
-        json += "\"indoor_temp\":" + String(status->indoorTemp) + ",";
-        json += "\"outdoor_temp\":" + String(status->outdoorTemp) + ",";
-        json += "\"fan\":" + String(status->fanSpeed) + ",";
-        json += "\"swing\":" + String(status->swingMode) + ",";
-        json += "\"turbo\":" + String(status->turboMode ? "true" : "false") + ",";
-        json += "\"eco\":" + String(status->ecoMode ? "true" : "false");
+        json += "\"success\":true,";
+        json += "\"state\":\"" + state + "\"";
         json += "}";
         
         request->send(200, "application/json", json);
@@ -195,11 +183,13 @@ void initAsyncWebServer() {
     webLog("Web server started");
 }
 
-void onAcStatus(ac_status_t* status) {
+void onAcStateChange() {
     webLog("=== AC Status Callback Triggered ===");
-    webLog("Power: " + String(status->power ? "ON" : "OFF"));
-    webLog("Mode: " + String(status->mode));
-    webLog("Target Temp: " + String(status->targetTemp) + "°C");
-    webLog("Indoor Temp: " + String(status->indoorTemp) + "°C");
-    webLog("Fan Speed: " + String(status->fanSpeed));
+    webLog("Power: " + String(ac.getPowerState() ? "ON" : "OFF"));
+    webLog("Mode: " + String((int)ac.getMode()));
+    webLog("Target Temp: " + String(ac.getTargetTemp()) + "°C");
+    webLog("Indoor Temp: " + String(ac.getIndoorTemp()) + "°C");
+    webLog("Outdoor Temp: " + String(ac.getOutdoorTemp()) + "°C");
+    webLog("Fan Mode: " + String((int)ac.getFanMode()));
+    webLog("Swing Mode: " + String((int)ac.getSwingMode()));
 }
