@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Serial Console</title>
+    <style>
+        body { 
+            font-family: 'Courier New', monospace; 
+            background: #1e1e1e; 
+            color: #d4d4d4; 
+            margin: 0;
+            padding: 20px;
+        }
+        h1 { color: #4CAF50; text-align: center; }
+        #console { 
+            background: #252526; 
+            border: 1px solid #3e3e42;
+            border-radius: 5px;
+            padding: 15px; 
+            height: 70vh; 
+            overflow-y: auto; 
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .log-line { 
+            margin: 2px 0; 
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .timestamp { color: #858585; }
+        .error { color: #f48771; }
+        .success { color: #89d185; }
+        .warning { color: #dcdcaa; }
+        .controls {
+            margin-top: 15px;
+            text-align: center;
+        }
+        button {
+            background: #0e639c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        button:hover { background: #1177bb; }
+        .status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 8px 15px;
+            border-radius: 3px;
+            background: #333;
+            font-size: 12px;
+        }
+        .connected { background: #4CAF50 !important; }
+        .disconnected { background: #f44336 !important; }
+    </style>
+</head>
+<body>
+    <h1>🖥️ Serial Console</h1>
+    <div class="status" id="status">Connecting...</div>
+    <div id="console"></div>
+    <div class="controls">
+        <button onclick="clearConsole()">Clear Console</button>
+        <button onclick="testAC()">Test AC Communication</button>
+        <button onclick="location.href='/'">Back to Dashboard</button>
+    </div>
+    
+    <script>
+        const console_div = document.getElementById('console');
+        const status_div = document.getElementById('status');
+        let ws;
+        let autoScroll = true;
+        
+        function connect() {
+            ws = new WebSocket('ws://' + window.location.hostname + '/ws');
+            
+            ws.onopen = function() {
+                addLog('WebSocket connected', 'success');
+                status_div.textContent = '🟢 Connected';
+                status_div.className = 'status connected';
+            };
+            
+            ws.onclose = function() {
+                addLog('WebSocket disconnected', 'error');
+                status_div.textContent = '🔴 Disconnected';
+                status_div.className = 'status disconnected';
+                setTimeout(connect, 3000);
+            };
+            
+            ws.onerror = function(error) {
+                addLog('WebSocket error: ' + error, 'error');
+            };
+            
+            ws.onmessage = function(event) {
+                addLog(event.data);
+            };
+        }
+        
+        function addLog(message, type = '') {
+            const timestamp = new Date().toLocaleTimeString();
+            const line = document.createElement('div');
+            line.className = 'log-line ' + type;
+            line.innerHTML = '<span class="timestamp">[' + timestamp + ']</span> ' + 
+                           escapeHtml(message);
+            console_div.appendChild(line);
+            
+            if (autoScroll) {
+                console_div.scrollTop = console_div.scrollHeight;
+            }
+            
+            // Limit to 500 lines
+            if (console_div.children.length > 500) {
+                console_div.removeChild(console_div.firstChild);
+            }
+        }
+        
+        function clearConsole() {
+            console_div.innerHTML = '';
+            addLog('Console cleared', 'warning');
+        }
+        
+        function testAC() {
+            addLog('Sending test command to AC...', 'warning');
+            fetch('/on').then(() => {
+                addLog('Test command sent', 'success');
+            });
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Detect manual scroll
+        console_div.addEventListener('scroll', function() {
+            autoScroll = (console_div.scrollTop + console_div.clientHeight >= 
+                         console_div.scrollHeight - 50);
+        });
+        
+        connect();
+    </script>
+</body>
+</html>

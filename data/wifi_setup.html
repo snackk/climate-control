@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>WiFi Setup - Climate Control</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+    <div class="topnav">
+        <h1><i class="fas fa-wifi"></i> WiFi Setup</h1>
+    </div>
+    
+    <div class="content">
+        <div class="card-grid">
+            <div class="card">
+                <p class="card-title">
+                    <i class="fas fa-network-wired"></i>
+                    Configure WiFi Credentials
+                </p>
+                <form action="/" method="POST">
+                    <label for="ssid">Network Name (SSID)</label>
+                    <input type="text" id="ssid" name="ssid" placeholder="Enter your WiFi SSID" required>
+                    
+                    <label for="pass">Network Password</label>
+                    <input type="password" id="pass" name="pass" placeholder="Enter WiFi password" required>
+                    
+                    <input type="submit" value="Connect">
+                </form>
+            </div>
+            
+            <div class="card">
+                <p class="card-title">
+                    <i class="fas fa-circle-info"></i>
+                    Setup Instructions
+                </p>
+                <p style="color: var(--text-secondary); line-height: 1.8;">
+                    1. Enter your WiFi network name<br>
+                    2. Enter your WiFi password<br>
+                    3. Click Connect<br>
+                    4. Device will restart and connect<br>
+                    5. Reconnect to your WiFi network<br>
+                    6. Access the dashboard
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

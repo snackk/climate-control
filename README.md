@@ -2,53 +2,65 @@
 
 <img width="873" height="310" alt="Screenshot 2025-09-01 at 21 24 55" src="https://github.com/user-attachments/assets/f44777e7-a79b-47b7-b347-da5eaeea888d" />
 
-This project enables control of a **Bosch Climate 3000i** air conditioning unit using ESPHome and the **Midea UART interface protocol**. The controller uses an ESP12S module to communicate directly with the AC unit over UART, providing local control without cloud dependencies.
+A modern web-based controller for Midea air conditioners using ESP8266/ESP12F with a sleek dark-themed interface.
+
+![Climate Control Dashboard](https://img.shields.io/badge/ESP8266-Compatible-blue)
+![PlatformIO](https://img.shields.io/badge/PlatformIO-Ready-orange)
+![License](https://img.shields.io/badge/License-MIT-green)
+
+## Features
+
+✨ **Modern Web Interface**
+- Dark-themed, responsive dashboard
+- Real-time AC status monitoring
+- Live web console for debugging
+- Over-The-Air (OTA) firmware updates
+
+🌡️ **Full Climate Control**
+- Power ON/OFF
+- Temperature adjustment (17-30°C)
+- Mode selection (AUTO, COOL, DRY, HEAT, FAN)
+- Fan speed control (AUTO, LOW, MEDIUM, HIGH)
+- Swing mode control
+- Turbo and Eco modes
+
+🔧 **Easy Setup**
+- WiFi configuration via captive portal
+- No hardcoded credentials
+- Automatic reconnection
+- Fallback AP mode
+
+📊 **Real-Time Monitoring**
+- WebSocket-based live logging
+- AC status via REST API
+- Temperature and mode display
+- Connection status indicators
 
 ## Hardware Requirements
 The necessary files BOM / Gerber / Pick and Place file are available on hardware/ for download.
 
-- **ESP12S** module
+- **ESP8266/ESP12E/ESP12F** microcontroller
 - **UART connection** to Bosch Climate 3000i control board
 - **Power supply** (3.3V for ESP module)
 
-## Software Prerequisites
+## Pin Configuration
 
-### Install ESPHome
-```
-pip install esphome
-```
+| Function | GPIO Pin | Description |
+|----------|----------|-------------|
+| AC TX | GPIO1 | Hardware UART TX to AC |
+| AC RX | GPIO3 | Hardware UART RX from AC |
+| Debug TX | GPIO2 | Serial1 debug output |
+| Power LED | GPIO2 | Built-in LED (optional) |
 
-### Run ESPHome Dashboard (Optional)
+**Baud Rates:**
+- AC Communication: 9600 baud (GPIO1/GPIO3)
+- Debug Output: 115200 baud (GPIO2)
 
-To run the ESPHome dashboard locally for a web-based interface:
-```
-esphome dashboard ./
-```
+## Software Requirements
 
-This will start a web server at `http://localhost:6052` where you can manage your ESPHome configurations.
+- [PlatformIO](https://platformio.org/) (VS Code extension recommended)
+- [Visual Studio Code](https://code.visualstudio.com/)
 
-## Building and Uploading Firmware
-
-### 1. Identify Your Serial Device
-
-First, identify your USB-to-serial device:
-```
-ls /dev/tty.usb*
-```
-
-Common formats: `/dev/tty.usbserial-XXXXXXXX` or `/dev/tty.SLAB_USBtoUART`
-
-### 2. Build and Upload
-
-Use the following command sequence to compile and upload the firmware:
-```
-esphome config bosch-climate.yaml && esphome config bosch-climate.yaml && esphome upload bosch-climate.yaml --device /dev/tty.usbserial-XXXX
-```
-**Note**: Replace `/dev/tty.usbserial-XXXX` with your actual device path from step 1.
-
-### Web Interface
-
-Access the built-in web server at: `http://bosch-climate-controller.local` or the device's IP address.
 
 ## 📄 License
 
