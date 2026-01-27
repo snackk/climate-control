@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>WiFi Connected - Climate Control</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+    <div class="topnav">
+        <h1><i class="fas fa-wifi"></i> WiFi Setup Complete</h1>
+    </div>
+    
+    <div class="content">
+        <div class="card-grid">
+            <div class="card">
+                <div class="success-message">
+                    <i class="fas fa-circle-check"></i>
+                    <h3>Successfully Connected!</h3>
+                    <p style="color: var(--text-secondary); margin: 20px 0;">
+                        Your credentials have been saved.<br>
+                        The device is now restarting...
+                    </p>
+                    
+                    <div style="margin: 30px 0;">
+                        <div style="width: 100%; height: 4px; background: var(--bg-dark); border-radius: 2px; overflow: hidden;">
+                            <div style="width: 0%; height: 100%; background: var(--accent); animation: progress 3s ease-in-out forwards;"></div>
+                        </div>
+                    </div>
+                    
+                    <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                        <i class="fas fa-circle-notch fa-spin"></i> Restarting device...
+                    </p>
+                    
+                    <p style="margin-top: 30px; padding: 15px; background: var(--bg-dark); border-radius: 5px; border-left: 3px solid var(--accent);">
+                        <strong style="color: var(--accent);">Next Step:</strong><br>
+                        <span style="color: var(--text-secondary);">
+                            Reconnect to your WiFi network and access the dashboard
+                        </span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <style>
+        @keyframes progress {
+            from { width: 0%; }
+            to { width: 100%; }
+        }
+    </style>
+</body>
+</html>
