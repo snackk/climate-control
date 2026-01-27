@@ -4,10 +4,15 @@
 #include <Filesys.h>
 #include <Wifi.h>
 #include <Appliance/AirConditioner/AirConditioner.h>
+#include <SoftwareSerial.h>
+
+// Definir os mesmos pinos do ESPHome
+#define MIDEA_TX_PIN 12  // D6 no NodeMCU
+#define MIDEA_RX_PIN 14  // D5 no NodeMCU
 
 using namespace dudanov::midea::ac;
 
-const char* VERSION = "1.0.0";
+const char* VERSION = "1.0.3";
 
 // AsyncWebServer on port 80
 AsyncWebServer server(80);
@@ -18,6 +23,7 @@ boolean restart = false;
 
 // MideaAC
 AirConditioner ac;
+SoftwareSerial mideaSerial(MIDEA_RX_PIN, MIDEA_TX_PIN);
 
 void initAsyncWebServer();
 void onAcStateChange();
@@ -26,7 +32,6 @@ void webLog(String message);
 
 void setup() {
     // Initialize Serial port - 9600 for Midea
-    Serial.begin(9600);
     Serial1.begin(115200);
     webLog("\n\nMidea AC Controller Starting...");
 
@@ -47,7 +52,9 @@ void setup() {
     initAsyncWebServer();
     
     // MideaUART
-    ac.setStream(&Serial);
+    // Inicializar SoftwareSerial para Midea
+    mideaSerial.begin(9600);
+    ac.setStream(&mideaSerial);  // Usar SoftwareSerial em vez de Serial
     ac.addOnStateCallback(onAcStateChange); 
     ac.setup();
     webLog("MideaUART initialized");
