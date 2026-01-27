@@ -21,13 +21,17 @@
                     <i class="fas fa-power-off"></i>
                     Air Conditioner Control
                 </p>
-                <div style="text-align: center; margin: 20px 0;">
-                    <a href="/on"><button class="button-on"><i class="fas fa-power-off"></i> Turn ON</button></a>
-                    <a href="/off"><button class="button-off"><i class="fas fa-power-off"></i> Turn OFF</button></a>
+                <div style="text-align: center; margin: 10px 0;">
+                    <button class="button-on" onclick="setPower('ON')">
+                        <i class="fas fa-power-off"></i> ON
+                    </button>
+                    <button class="button-off" onclick="setPower('OFF')">
+                        <i class="fas fa-power-off"></i> OFF
+                    </button>
                 </div>
-                <div class="state">
-                    <span class="status-indicator status-on"></span>
-                    Status: <span class="value">%AC_STATE%</span>
+                <div class="state" style="margin-top: 5px;">
+                    <span class="status-indicator" id="status-indicator"></span>
+                    Status: <span class="value" id="ac-state">--</span>
                 </div>
             </div>
 
@@ -37,21 +41,21 @@
                     <i class="fas fa-chart-line"></i>
                     System Status
                 </p>
-                <div id="status-info" style="color: var(--text-secondary); line-height: 2;">
-                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border);">
+                <div id="status-info" style="color: var(--text-secondary); line-height: 1.8;">
+                    <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border);">
                         <span><i class="fas fa-thermometer-half"></i> Temperature:</span>
                         <span class="value" id="temp">--°C</span>
                     </div>
-                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border);">
+                    <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border);">
                         <span><i class="fas fa-fan"></i> Fan Speed:</span>
                         <span class="value" id="fan">--</span>
                     </div>
-                    <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                    <div style="display: flex; justify-content: space-between; padding: 6px 0;">
                         <span><i class="fas fa-gauge"></i> Mode:</span>
                         <span class="value" id="mode">--</span>
                     </div>
                 </div>
-                <div style="margin-top: 20px; text-align: center;">
+                <div style="margin-top: 10px; text-align: center;">
                     <button class="button-secondary" onclick="updateStatus()">
                         <i class="fas fa-rotate"></i> Refresh
                     </button>
@@ -64,14 +68,20 @@
                     <i class="fas fa-terminal"></i>
                     System Console
                 </p>
-                <p style="color: var(--text-secondary); margin-bottom: 20px;">
-                    View real-time logs and debug information
-                </p>
-                <a href="/console">
-                    <button class="button-secondary" style="width: 100%;">
-                        <i class="fas fa-terminal"></i> Open Console
-                    </button>
-                </a>
+                <div id="console-info" style="color: var(--text-secondary); line-height: 2;">
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                        <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                            View real-time logs and debug information
+                        </p>
+                    </div>
+                </div>
+                <div style="margin-top: 20px; text-align: center;">
+                    <a href="/console">
+                        <button class="button-secondary" style="width: 100%;">
+                            <i class="fas fa-terminal"></i> Open Console
+                        </button>
+                    </a>
+                </div>
             </div>
 
             <!-- Firmware Card -->
@@ -80,23 +90,52 @@
                     <i class="fas fa-microchip"></i>
                     Firmware Management
                 </p>
-                <p style="color: var(--text-secondary); margin-bottom: 20px;">
-                    Current Version: <span class="value">%VERSION%</span>
-                </p>
-                <a href="/update">
-                    <button class="button-secondary" style="width: 100%;">
-                        <i class="fas fa-download"></i> Update Firmware
-                    </button>
-                </a>
+                <div id="firmware-info" style="color: var(--text-secondary); line-height: 2;">
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                        <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                            Current Version: <span class="value" id="firmware-version">--</span>
+                        </p>
+                    </div>
+                </div>
+                <div style="margin-top: 20px; text-align: center;">
+                    <a href="/update">
+                        <button class="button-secondary" style="width: 100%;">
+                            <i class="fas fa-download"></i> Update Firmware
+                        </button>
+                    </a>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
+        function firmwareVersion() {
+            fetch('/api/firmware')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('firmware-version').textContent = data.version;
+                })
+                .catch(err => console.error('Firmware fetch failed:', err));
+        }
+
+        // Atualizar status do AC
         function updateStatus() {
             fetch('/api/status')
                 .then(r => r.json())
                 .then(data => {
+                    // Atualizar estado ON/OFF
+                    const stateElement = document.getElementById('ac-state');
+                    const indicatorElement = document.getElementById('status-indicator');
+                    
+                    stateElement.textContent = data.state;
+                    
+                    if (data.state === 'ON') {
+                        indicatorElement.className = 'status-indicator status-on';
+                    } else {
+                        indicatorElement.className = 'status-indicator status-off';
+                    }
+                    
+                    // Atualizar dados do sistema
                     document.getElementById('temp').textContent = data.temp + '°C';
                     document.getElementById('fan').textContent = data.fan;
                     const modes = ['AUTO', 'COOL', 'DRY', 'HEAT', 'FAN'];
@@ -105,9 +144,26 @@
                 .catch(err => console.error('Status update failed:', err));
         }
         
+        // Controlar power ON/OFF via API
+        function setPower(state) {
+            fetch(`/api/state/${state}`, {
+                method: 'PUT'
+            })
+            .then(r => r.json())
+            .then(data => {
+                console.log('Power state changed:', data);
+                // Atualizar UI imediatamente
+                setTimeout(updateStatus, 500);
+            })
+            .catch(err => console.error('Power control failed:', err));
+        }
+        
         // Auto-update every 10 seconds
         setInterval(updateStatus, 10000);
+        
+        // Inicializar ao carregar a página
         updateStatus();
+        firmwareVersion();
     </script>
 </body>
 </html>
