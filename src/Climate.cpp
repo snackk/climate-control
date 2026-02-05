@@ -7,7 +7,7 @@
 
 using namespace dudanov::midea::ac;
 
-const char* VERSION = "1.0.3";
+const char* VERSION = "1.0.4";
 
 // AsyncWebServer on port 80
 AsyncWebServer server(80);
