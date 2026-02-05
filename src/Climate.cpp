@@ -6,9 +6,8 @@
 #include <Appliance/AirConditioner/AirConditioner.h>
 #include <SoftwareSerial.h>
 
-// Definir os mesmos pinos do ESPHome
-#define MIDEA_TX_PIN 12  // D6 no NodeMCU
-#define MIDEA_RX_PIN 14  // D5 no NodeMCU
+#define MIDEA_TX_PIN 12  // D6
+#define MIDEA_RX_PIN 14  // D5
 
 using namespace dudanov::midea::ac;
 
@@ -31,15 +30,17 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
 void webLog(String message); 
 
 void setup() {
-    // Initialize Serial port - 9600 for Midea
-    Serial1.begin(115200);
-    webLog("\n\nMidea AC Controller Starting...");
-
     // Initialize File System
     Filesys.initFS();
     
     // Initialize WiFi
     Wifi.initWiFi(&server);
+
+    // MideaUART
+    mideaSerial.begin(9600);
+    ac.setStream(&mideaSerial);  // Usar SoftwareSerial em vez de Serial
+    ac.addOnStateCallback(onAcStateChange);
+    ac.setup();
 
     // Initialize WebSocket
     ws.onEvent(onWsEvent);
@@ -50,15 +51,8 @@ void setup() {
     
     // Initialize Web Server 
     initAsyncWebServer();
-    
-    // MideaUART
-    // Inicializar SoftwareSerial para Midea
-    mideaSerial.begin(9600);
-    ac.setStream(&mideaSerial);  // Usar SoftwareSerial em vez de Serial
-    ac.addOnStateCallback(onAcStateChange); 
-    ac.setup();
+
     webLog("MideaUART initialized");
-    
     webLog("AC Controller Ready!");
 }
 
@@ -79,17 +73,15 @@ void loop() {
 // WebSocket event handler
 void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) {
     if (type == WS_EVT_CONNECT) {
-        Serial1.printf("WebSocket client #%u connected\n", client->id());
         client->text("Connected to AC Controller");
-    } else if (type == WS_EVT_DISCONNECT) {
-        Serial1.printf("WebSocket client #%u disconnected\n", client->id());
     }
 }
 
 // Send log message to both Serial and WebSocket
 void webLog(String message) {
-    Serial1.println(message);
-    ws.textAll(message);  // Send to all connected WebSocket clients
+    if (ws.count() > 0) {
+        ws.textAll(message);
+    }
 }
 
 void initAsyncWebServer() {
