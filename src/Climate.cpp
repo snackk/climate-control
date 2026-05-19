@@ -12,7 +12,7 @@
 
 using namespace dudanov::midea::ac;
 
-const char* VERSION = "1.0.4";
+const char* VERSION = "1.0.5";
 const char* devNamePath = "/dev_name.txt";
 
 // AsyncWebServer on port 80
@@ -218,6 +218,52 @@ void initAsyncWebServer() {
         String json = "{";
         json += "\"success\":true,";
         json += "\"state\":\"" + state + "\"";
+        json += "}";
+        request->send(200, "application/json", json);
+    });
+
+    server.on("^\\/api\\/temp\\/([0-9]+)$", HTTP_PUT, [](AsyncWebServerRequest *request) {
+        int temp = request->pathArg(0).toInt();
+
+        if (temp < 17 || temp > 30) {
+            request->send(400, "application/json", "{\"success\":false,\"error\":\"Temperature must be between 17 and 30\"}");
+            return;
+        }
+
+        webLog("API command: Set temp to " + String(temp) + "°C");
+        Control control;
+        control.targetTemp = (float)temp;
+        ac.control(control);
+
+        String json = "{";
+        json += "\"success\":true,";
+        json += "\"temp\":" + String(temp);
+        json += "}";
+        request->send(200, "application/json", json);
+    });
+
+    server.on("^\\/api\\/mode\\/(auto|cool|heat|dry|fan)$", HTTP_PUT, [](AsyncWebServerRequest *request) {
+        String modeStr = request->pathArg(0);
+
+        Mode mode;
+        if (modeStr == "auto") mode = Mode::MODE_AUTO;
+        else if (modeStr == "cool") mode = Mode::MODE_COOL;
+        else if (modeStr == "heat") mode = Mode::MODE_HEAT;
+        else if (modeStr == "dry") mode = Mode::MODE_DRY;
+        else if (modeStr == "fan") mode = Mode::MODE_FAN_ONLY;
+        else {
+            request->send(400, "application/json", "{\"success\":false,\"error\":\"Invalid mode\"}");
+            return;
+        }
+
+        webLog("API command: Set mode to " + modeStr);
+        Control control;
+        control.mode = mode;
+        ac.control(control);
+
+        String json = "{";
+        json += "\"success\":true,";
+        json += "\"mode\":\"" + modeStr + "\"";
         json += "}";
         request->send(200, "application/json", json);
     });
