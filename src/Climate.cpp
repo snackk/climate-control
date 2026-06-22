@@ -12,7 +12,7 @@
 
 using namespace dudanov::midea::ac;
 
-const char* VERSION = "1.0.5";
+const char* VERSION = "1.0.6";
 const char* devNamePath = "/dev_name.txt";
 
 // AsyncWebServer on port 80
