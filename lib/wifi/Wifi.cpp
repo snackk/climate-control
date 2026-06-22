@@ -151,6 +151,11 @@ void WifiClass::connectToWiFi() {
         connectionAttempts++;
         if (connectionAttempts >= MAX_WIFI_ATTEMPTS) {
             switchToAPMode();
+        } else {
+            // Schedule another reconnection attempt
+            shouldReconnect = true;
+            lastDisconnectTime = millis();
+            Serial1.println("Will retry connection...");
         }
         return;
     }
